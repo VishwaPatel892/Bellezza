@@ -1,0 +1,24 @@
+{
+  "name": "bellezza-backend",
+  "version": "1.0.0",
+  "description": "Bellezza Skincare Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test-master-platform.js",
+    "test:all": "node test-master-platform.js && node test-skin-assessment.js && node test-india-platform.js && node test-real-apis.js && node test-api.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.10.0",
+    "morgan": "^1.10.0"
+  },
+  "private": true
+}

@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Bellezza",
+    "slug": "bellezza",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "bellezza",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bellezza.skincare",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Bellezza requires camera access to scan skincare product barcodes and analyze ingredient labels.",
+        "NSPhotoLibraryUsageDescription": "Bellezza requires photo library access to upload product labels and save skin journal progress photos."
+      }
+    },
+    "android": {
+      "package": "com.bellezza.skincare",
+      "adaptiveIcon": {
+        "backgroundColor": "#722F37"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-splash-screen",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Bellezza to access your camera to scan barcodes and analyze product labels."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Bellezza to access your photos to analyze ingredient labels and track skin journal entries."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#722F37"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "0f2baba8-4766-4a79-bcb9-6ba898fcbf5b"
+      }
+    },
+    "owner": "vishwapatel2095"
+  }
+}
