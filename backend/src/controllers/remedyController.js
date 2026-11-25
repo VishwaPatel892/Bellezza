@@ -1,5 +1,7 @@
 const remedyService = require('../services/remedyService');
-const { sendSuccess } = require('../utils/response');
+const { groqService } = require('../services/groqService');
+const User = require('../models/User');
+const { sendSuccess, sendError } = require('../utils/response');
 
 const getRemedies = async (req, res, next) => {
   try {
@@ -83,6 +85,71 @@ const getSavedRemedies = async (req, res, next) => {
   }
 };
 
+/**
+ * AI Home Remedy Formulation powered by Groq 120B
+ * POST /api/remedies/ai-formulate
+ */
+const aiFormulate = async (req, res, next) => {
+  try {
+    const { concern, skinType, allergies, availableIngredients } = req.body || {};
+
+    if (!concern || !concern.trim()) {
+      return sendError(res, 'Please provide a skin concern for remedy formulation (e.g. "Acne", "Dry barrier", "Dark spots").', 400);
+    }
+
+    // Inherit user profile allergies if logged in
+    let userAllergies = allergies || [];
+    let userSkinType = skinType || 'Combination';
+    const userId = req.userId || req.user?.id;
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        userSkinType = skinType || user.skinProfile?.skinType || 'Combination';
+        userAllergies = Array.from(new Set([
+          ...userAllergies,
+          ...(user.skinProfile?.knownIngredientAllergies || []),
+          ...(user.skinProfile?.irritationTriggers || []),
+        ]));
+      }
+    }
+
+    const remedy = await groqService.formulateHomeRemedy({
+      concern,
+      skinType: userSkinType,
+      allergies: userAllergies,
+      availableIngredients: availableIngredients || [],
+    });
+
+    return sendSuccess(res, remedy, 'Evidence-based home remedy formulated successfully by Groq AI.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * AI DIY Remedy Safety and Irritation Evaluation powered by Groq
+ * POST /api/remedies/ai-safety-check
+ */
+const aiSafetyCheck = async (req, res, next) => {
+  try {
+    const { remedyName, ingredients, allergies } = req.body || {};
+
+    if (!ingredients || (Array.isArray(ingredients) && ingredients.length === 0)) {
+      return sendError(res, 'Please provide list of ingredients to audit for safety.', 400);
+    }
+
+    const audit = await groqService.evaluateRemedySafety({
+      remedyName: remedyName || 'Custom Recipe',
+      ingredients,
+      userAllergies: allergies || [],
+    });
+
+    return sendSuccess(res, audit, 'Remedy safety audit completed.');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getRemedies,
   searchRemedies,
@@ -92,4 +159,6 @@ module.exports = {
   saveRemedy,
   unsaveRemedy,
   getSavedRemedies,
+  aiFormulate,
+  aiSafetyCheck,
 };

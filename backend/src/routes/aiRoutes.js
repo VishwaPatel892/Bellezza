@@ -1,31 +1,32 @@
 const express = require('express');
 const {
   chat,
+  analyzeFace,
   getConversations,
   getConversationById,
   deleteConversation,
   recordFeedback,
 } = require('../controllers/aiController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// All AI assistant routes require authentication
-router.use(authenticate);
+// Face Recognition & Skin Diagnostics: POST /api/ai/face-analysis
+router.post('/face-analysis', optionalAuth, analyzeFace);
 
 // Chat endpoint: POST /api/ai/chat
-router.post('/chat', chat);
+router.post('/chat', optionalAuth, chat);
 
 // Conversation list: GET /api/ai/conversations
-router.get('/conversations', getConversations);
+router.get('/conversations', authenticate, getConversations);
 
 // Conversation details: GET /api/ai/conversations/:id
-router.get('/conversations/:id', getConversationById);
+router.get('/conversations/:id', authenticate, getConversationById);
 
 // Delete conversation: DELETE /api/ai/conversations/:id
-router.delete('/conversations/:id', deleteConversation);
+router.delete('/conversations/:id', authenticate, deleteConversation);
 
 // Feedback endpoint: POST /api/ai/feedback
-router.post('/feedback', recordFeedback);
+router.post('/feedback', authenticate, recordFeedback);
 
 module.exports = router;

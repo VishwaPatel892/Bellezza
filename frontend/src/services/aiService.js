@@ -38,6 +38,14 @@ export const aiService = {
   },
 
   /**
+   * AI Face Recognition & Skin Analysis via Groq Vision
+   */
+  analyzeFace: async (imageBase64) => {
+    const res = await api.post('/ai/face-analysis', { image: imageBase64 });
+    return res.data;
+  },
+
+  /**
    * Submit message feedback
    */
   submitFeedback: async (conversationId, messageId, feedback) => {

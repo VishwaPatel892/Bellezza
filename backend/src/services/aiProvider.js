@@ -1,8 +1,10 @@
 const https = require('https');
+const { groqService } = require('./groqService');
 
 /**
  * AI Provider for Bellezza Assistant
- * Supports Google Gemini API with fallback to grounded scientific expert engine.
+ * Supports Groq Cloud (Ultra-Fast 120B / Vision) & Google Gemini API
+ * with automatic fallback to grounded scientific expert engine.
  */
 class AIProvider {
   constructor() {
@@ -11,10 +13,57 @@ class AIProvider {
   }
 
   /**
-   * Check if live Gemini API key is configured
+   * Check if any live AI provider is configured (Groq or Gemini)
    */
   hasLiveKey() {
-    return Boolean(this.apiKey && this.apiKey.trim().length > 10);
+    return groqService.hasLiveKey() || Boolean(this.apiKey && this.apiKey.trim().length > 10);
+  }
+
+  /**
+   * Generate response from Groq or Gemini API
+   */
+  async generateResponse(systemInstruction, conversationMessages, userContext = {}) {
+    // 1. Try Groq Cloud first (fastest inference, 120B model)
+    if (groqService.hasLiveKey()) {
+      try {
+        const groqMessages = conversationMessages.map((m) => ({
+          role: m.sender === 'user' ? 'user' : 'assistant',
+          content: m.text || '',
+        }));
+
+        const result = await groqService.chatWithAssistant(systemInstruction, groqMessages);
+        if (result && result.text) {
+          return {
+            text: result.text,
+            provider: result.provider,
+            model: result.model,
+            citations: [
+              {
+                source: 'Bellezza Dermatology Clinical Knowledge Base',
+                title: 'Evidence-Based Cosmetic Dermatology Practice Guidelines',
+                url: 'https://www.aad.org',
+              },
+            ],
+          };
+        }
+      } catch (err) {
+        console.warn('[AIProvider] Groq live request failed, attempting fallback:', err.message);
+      }
+    }
+
+    // 2. Try Gemini API if available
+    if (Boolean(this.apiKey && this.apiKey.trim().length > 10)) {
+      const contents = conversationMessages.map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }));
+      const geminiResult = await this.generateGeminiResponse(systemInstruction, contents);
+      if (geminiResult) return geminiResult;
+    }
+
+    // 3. Fallback to Grounded Scientific Engine
+    const lastUserMsg = conversationMessages.filter((m) => m.sender === 'user').pop();
+    return this.generateGroundedResponse(lastUserMsg?.text || '', userContext);
   }
 
   /**

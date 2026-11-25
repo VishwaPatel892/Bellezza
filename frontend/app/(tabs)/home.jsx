@@ -222,6 +222,37 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Groq AI Face Scanner & Tailored Remedies Banner */}
+        <View style={styles.featureSection}>
+          <View style={[styles.faceScanPromoCard, SHADOWS.card]}>
+            <View style={styles.faceScanHeaderRow}>
+              <View style={styles.faceScanBadge}>
+                <Camera size={14} color={COLORS.burgundy} />
+                <Text style={styles.faceScanBadgeText}>GROQ VISION AI • LIVE SCANNER</Text>
+              </View>
+              <View style={styles.fastTag}>
+                <Sparkles size={12} color="#E67E22" />
+                <Text style={styles.fastTagText}>Instant Diagnostics</Text>
+              </View>
+            </View>
+
+            <Text style={styles.faceScanTitle}>Face Recognition & Evidence-Based Remedies</Text>
+            <Text style={styles.faceScanDesc}>
+              Scan your facial skin with Groq Vision AI to detect barrier hydration, acne, pores & redness, and get custom-formulated home remedies instantly.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.faceScanBtn}
+              onPress={() => router.push('/face-scan')}
+              activeOpacity={0.85}
+            >
+              <Camera size={16} color={COLORS.cream} />
+              <Text style={styles.faceScanBtnText}>Launch Face & Skin Scanner</Text>
+              <ArrowRight size={16} color={COLORS.cream} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Personalized Skin Assessment Callout */}
         <View style={styles.assessmentSection}>
           {!user?.skinProfile?.assessmentCompleted ? (
@@ -925,5 +956,80 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: SPACING.xs,
+  },
+  faceScanPromoCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(92, 26, 46, 0.12)',
+    marginHorizontal: SPACING.lg,
+  },
+  faceScanHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs,
+  },
+  faceScanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(92, 26, 46, 0.08)',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: RADIUS.xs,
+  },
+  faceScanBadgeText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  fastTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 2,
+    borderRadius: RADIUS.xs,
+  },
+  fastTagText: {
+    ...TYPOGRAPHY.caption,
+    color: '#E67E22',
+    fontWeight: '700',
+    fontSize: 9,
+  },
+  faceScanTitle: {
+    ...TYPOGRAPHY.h4,
+    color: COLORS.textPrimary,
+    fontWeight: '700',
+    fontSize: 17,
+    marginTop: 4,
+  },
+  faceScanDesc: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
+    marginBottom: SPACING.md,
+  },
+  faceScanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    backgroundColor: COLORS.burgundy,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  faceScanBtnText: {
+    ...TYPOGRAPHY.button,
+    color: COLORS.cream,
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

@@ -40,6 +40,31 @@ export const remedyService = {
     const res = await api.get('/remedies/saved');
     return res.data;
   },
+
+  /**
+   * AI Remedy Formulation powered by Groq 120B
+   */
+  aiFormulate: async ({ concern, skinType, allergies, availableIngredients }) => {
+    const res = await api.post('/remedies/ai-formulate', {
+      concern,
+      skinType,
+      allergies,
+      availableIngredients,
+    });
+    return res.data;
+  },
+
+  /**
+   * AI DIY Remedy Safety and Irritation Evaluation powered by Groq
+   */
+  aiSafetyCheck: async ({ remedyName, ingredients, allergies }) => {
+    const res = await api.post('/remedies/ai-safety-check', {
+      remedyName,
+      ingredients,
+      allergies,
+    });
+    return res.data;
+  },
 };
 
 export default remedyService;

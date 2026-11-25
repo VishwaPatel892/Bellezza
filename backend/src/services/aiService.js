@@ -35,71 +35,70 @@ class AIService {
       }
     }
 
-    // 2. Fetch or create conversation
-    let conversation;
-    if (conversationId) {
-      conversation = await Conversation.findOne({ _id: conversationId, userId });
-    }
+    // 2. Fetch or create conversation (if user is authenticated)
+    let conversation = null;
+    let contextMessages = [{ sender: 'user', text: message.trim() }];
 
-    if (!conversation) {
-      conversation = new Conversation({
-        userId,
-        title: message.slice(0, 40) + (message.length > 40 ? '...' : ''),
-        category,
-        contextSnapshot: {
-          skinType: userContext.skinType,
-          sensitivityLevel: userContext.sensitivityLevel,
-          concerns: userContext.concerns,
-          goals: userContext.goals,
-        },
-        messages: [],
+    if (userId) {
+      if (conversationId) {
+        conversation = await Conversation.findOne({ _id: conversationId, userId });
+      }
+
+      if (!conversation) {
+        conversation = new Conversation({
+          userId,
+          title: message.slice(0, 40) + (message.length > 40 ? '...' : ''),
+          category,
+          contextSnapshot: {
+            skinType: userContext.skinType,
+            sensitivityLevel: userContext.sensitivityLevel,
+            concerns: userContext.concerns,
+            goals: userContext.goals,
+          },
+          messages: [],
+        });
+      }
+
+      // Append user message
+      conversation.messages.push({
+        sender: 'user',
+        text: message.trim(),
+        timestamp: new Date(),
       });
+
+      contextMessages = conversation.messages.slice(-8);
     }
 
-    // 3. Append user message
-    conversation.messages.push({
-      sender: 'user',
-      text: message.trim(),
-      timestamp: new Date(),
-    });
+    // 3. Generate response using Groq / Gemini / Grounded dermatology engine
+    const systemInstruction = buildSystemInstruction(userContext);
+    const aiResult = await aiProvider.generateResponse(
+      systemInstruction,
+      contextMessages,
+      userContext
+    );
 
-    // 4. Generate response using live Gemini or grounded dermatology engine
-    let aiResult = null;
-    if (aiProvider.hasLiveKey()) {
-      const systemInstruction = buildSystemInstruction(userContext);
-      const contents = conversation.messages.slice(-8).map((m) => ({
-        role: m.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
-      }));
-
-      aiResult = await aiProvider.generateGeminiResponse(systemInstruction, contents);
-    }
-
-    // Fallback if no live key or network timeout
-    if (!aiResult) {
-      aiResult = aiProvider.generateGroundedResponse(message, userContext);
-    }
-
-    // 5. Append assistant reply
+    // 4. Append assistant reply if conversation is persisted
     const assistantMessage = {
       sender: 'assistant',
       text: aiResult.text,
       citations: aiResult.citations || [],
       timestamp: new Date(),
     };
-    conversation.messages.push(assistantMessage);
 
-    await conversation.save();
+    if (conversation) {
+      conversation.messages.push(assistantMessage);
+      await conversation.save();
+    }
 
     return {
-      conversationId: conversation._id,
-      title: conversation.title,
+      conversationId: conversation?._id || null,
+      title: conversation?.title || 'Skincare Consultation',
       reply: aiResult.text,
       citations: aiResult.citations || [],
       provider: aiResult.provider,
       model: aiResult.model,
       timestamp: assistantMessage.timestamp,
-      messageId: conversation.messages[conversation.messages.length - 1]._id,
+      messageId: conversation?.messages?.[conversation.messages.length - 1]?._id || null,
     };
   }
 

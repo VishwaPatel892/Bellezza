@@ -8,10 +8,18 @@ const {
   saveRemedy,
   unsaveRemedy,
   getSavedRemedies,
+  aiFormulate,
+  aiSafetyCheck,
 } = require('../controllers/remedyController');
 const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
+
+// AI Remedy Formulation via Groq: POST /api/remedies/ai-formulate
+router.post('/ai-formulate', optionalAuth, aiFormulate);
+
+// AI DIY Remedy Safety Audit: POST /api/remedies/ai-safety-check
+router.post('/ai-safety-check', optionalAuth, aiSafetyCheck);
 
 // Search endpoint: GET /api/remedies/search?q=
 router.get('/search', searchRemedies);

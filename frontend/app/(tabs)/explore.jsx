@@ -31,6 +31,10 @@ import {
   GitCompare,
   Shuffle,
   Check,
+  Camera,
+  Clock,
+  Shield,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useAuth } from '../../src/hooks/useAuth';
 import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
@@ -116,6 +120,34 @@ export default function ExploreScreen() {
   const [subPrice, setSubPrice] = useState('');
   const [subIngredients, setSubIngredients] = useState('');
   const [subLoading, setSubLoading] = useState(false);
+
+  // Groq AI Remedy Formulator Modal
+  const [remedyModalVisible, setRemedyModalVisible] = useState(false);
+  const [remedyConcernInput, setRemedyConcernInput] = useState('Acne blemishes, redness, and dehydration');
+  const [remedySkinType, setRemedySkinType] = useState(user?.skinProfile?.skinType || 'Combination');
+  const [remedyFormulating, setRemedyFormulating] = useState(false);
+  const [formulatedRemedy, setFormulatedRemedy] = useState(null);
+
+  const handleFormulateRemedy = async () => {
+    if (!remedyConcernInput.trim()) {
+      Alert.alert('Skin Concern Required', 'Please enter a skin concern for home remedy formulation.');
+      return;
+    }
+    setRemedyFormulating(true);
+    setFormulatedRemedy(null);
+    try {
+      const data = await remedyService.aiFormulate({
+        concern: remedyConcernInput.trim(),
+        skinType: remedySkinType,
+        allergies: user?.skinProfile?.knownIngredientAllergies || [],
+      });
+      setFormulatedRemedy(data);
+    } catch (err) {
+      Alert.alert('Formulation Error', err.message || 'Could not formulate remedy at this time.');
+    } finally {
+      setRemedyFormulating(false);
+    }
+  };
 
   const savedProductIds = user?.savedProducts || [];
   const savedIngredientIds = user?.savedIngredients || [];
@@ -414,6 +446,24 @@ export default function ExploreScreen() {
             <PlusCircle size={13} color={COLORS.burgundy} />
             <Text style={styles.actionPillText}>Submit</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionPill, { backgroundColor: 'rgba(92, 26, 46, 0.08)' }]}
+            onPress={() => router.push('/face-scan')}
+            accessibilityLabel="AI Face Recognition & Skin Scanner"
+          >
+            <Camera size={13} color={COLORS.burgundy} />
+            <Text style={[styles.actionPillText, { fontWeight: '700' }]}>Face Scan</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionPill, { backgroundColor: 'rgba(230, 126, 34, 0.1)' }]}
+            onPress={() => setRemedyModalVisible(true)}
+            accessibilityLabel="AI Home Remedy Formulator"
+          >
+            <Sparkles size={13} color="#E67E22" />
+            <Text style={[styles.actionPillText, { color: '#E67E22', fontWeight: '700' }]}>AI Remedies</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -593,6 +643,24 @@ export default function ExploreScreen() {
                     </View>
                     <Text style={styles.groupCount}>{filteredRemedies.length} protocols</Text>
                   </View>
+
+                  {/* Groq AI Custom Remedy Formulator Banner */}
+                  <TouchableOpacity
+                    style={[styles.aiRemedyPromoCard, SHADOWS.subtle]}
+                    onPress={() => setRemedyModalVisible(true)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.aiRemedyIconWrap}>
+                      <Sparkles size={20} color={COLORS.cream} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.aiRemedyPromoTitle}>Formulate Custom Recipe with Groq AI</Text>
+                      <Text style={styles.aiRemedyPromoDesc}>
+                        Need targeted care for acne, redness, or dark spots? Get a customized, safe, peer-reviewed recipe in 2 seconds.
+                      </Text>
+                    </View>
+                    <ChevronRight size={18} color={COLORS.burgundy} />
+                  </TouchableOpacity>
                   {filteredRemedies.map((remedy) => {
                     const id = remedy._id || remedy.id;
                     return (
@@ -1305,6 +1373,189 @@ export default function ExploreScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* GROQ AI REMEDY FORMULATOR MODAL */}
+      <Modal
+        visible={remedyModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setRemedyModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalSubtitle}>POWERED BY GROQ CLOUD 120B</Text>
+                <Text style={styles.modalTitle}>AI Remedy Formulator</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setRemedyModalVisible(false)}
+                style={styles.closeBtn}
+              >
+                <X size={20} color={COLORS.burgundy} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalHelpText}>
+              Describe any skin condition or goal. Groq AI formulates a safe, non-toxic, peer-reviewed home remedy with exact measurements and scientific rationale.
+            </Text>
+
+            {/* Input & Quick Tags */}
+            <View style={styles.remedyInputBox}>
+              <TextInput
+                style={styles.remedyTextInput}
+                placeholder="e.g. Redness after shaving, hormonal jawline acne, dry barrier"
+                value={remedyConcernInput}
+                onChangeText={setRemedyConcernInput}
+                placeholderTextColor={COLORS.textMuted}
+                multiline
+              />
+
+              {/* Quick Tags */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickTagsScroll}>
+                {[
+                  'Acne & Redness',
+                  'Barrier Dehydration',
+                  'Post-Sun Soothing',
+                  'Hyperpigmentation',
+                  'Under-Eye Puffiness',
+                ].map((tag, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.quickTagPill}
+                    onPress={() => setRemedyConcernInput(tag)}
+                  >
+                    <Text style={styles.quickTagText}>{tag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Skin Type Selector */}
+            <View style={styles.skinTypeRow}>
+              <Text style={styles.selectorLabel}>Target Skin Type:</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['Dry', 'Oily', 'Combination', 'Sensitive', 'Normal'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.typePill, remedySkinType === type && styles.typePillActive]}
+                    onPress={() => setRemedySkinType(type)}
+                  >
+                    <Text style={[styles.typePillText, remedySkinType === type && styles.typePillTextActive]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Formulate Button */}
+            <TouchableOpacity
+              style={[styles.formulateBtn, remedyFormulating && { opacity: 0.7 }]}
+              onPress={handleFormulateRemedy}
+              disabled={remedyFormulating}
+            >
+              {remedyFormulating ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ActivityIndicator size="small" color={COLORS.cream} />
+                  <Text style={styles.formulateBtnText}>Groq AI Formulating Recipe...</Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={16} color={COLORS.cream} />
+                  <Text style={styles.formulateBtnText}>Formulate Evidence-Based Recipe</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Formulated Recipe Results */}
+            {formulatedRemedy && (
+              <ScrollView style={styles.remedyResultScroll} showsVerticalScrollIndicator={false}>
+                <View style={styles.formulatedCard}>
+                  <View style={styles.formulatedHeader}>
+                    <Text style={styles.formulatedName}>{formulatedRemedy.name}</Text>
+                    <View style={styles.formulatedBadge}>
+                      <ShieldCheck size={12} color={COLORS.burgundy} />
+                      <Text style={styles.formulatedBadgeText}>
+                        {formulatedRemedy.evidenceLevel || 'Evidence-Based'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.formulatedCategory}>
+                    Category: {formulatedRemedy.category || 'Clinical Home Care'}
+                  </Text>
+                  <Text style={styles.formulatedDesc}>{formulatedRemedy.description}</Text>
+
+                  {/* Ingredients */}
+                  <Text style={styles.formulatedSectionTitle}>INGREDIENTS & CONCENTRATIONS</Text>
+                  {(formulatedRemedy.ingredients || []).map((ing, iIdx) => (
+                    <View key={iIdx} style={styles.formulatedIngRow}>
+                      <Text style={styles.formulatedBullet}>•</Text>
+                      <Text style={styles.formulatedIngText}>
+                        {ing.amount} <Text style={{ fontWeight: '700' }}>{ing.name}</Text>
+                        {ing.purpose ? ` — ${ing.purpose}` : ''}
+                      </Text>
+                    </View>
+                  ))}
+
+                  {/* Preparation */}
+                  {formulatedRemedy.preparationInstructions && (
+                    <>
+                      <Text style={styles.formulatedSectionTitle}>PREPARATION METHOD</Text>
+                      {formulatedRemedy.preparationInstructions.map((pStep, pIdx) => (
+                        <Text key={pIdx} style={styles.formulatedStepText}>
+                          {pIdx + 1}. {pStep}
+                        </Text>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Application */}
+                  {formulatedRemedy.applicationInstructions && (
+                    <>
+                      <Text style={styles.formulatedSectionTitle}>APPLICATION PROTOCOL</Text>
+                      {formulatedRemedy.applicationInstructions.map((aStep, aIdx) => (
+                        <Text key={aIdx} style={styles.formulatedStepText}>
+                          {aIdx + 1}. {aStep}
+                        </Text>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Frequency */}
+                  {formulatedRemedy.frequency && (
+                    <View style={styles.formulatedFreqRow}>
+                      <Clock size={13} color={COLORS.burgundy} />
+                      <Text style={styles.formulatedFreqText}>{formulatedRemedy.frequency}</Text>
+                    </View>
+                  )}
+
+                  {/* Scientific Rationale */}
+                  {formulatedRemedy.scientificExplanation && (
+                    <View style={styles.scienceRationaleBox}>
+                      <Text style={styles.scienceRationaleTitle}>DERMATOLOGICAL MECHANISM</Text>
+                      <Text style={styles.scienceRationaleText}>
+                        {formulatedRemedy.scientificExplanation}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Patch Testing Protocol */}
+                  {formulatedRemedy.patchTestingGuidance && (
+                    <View style={styles.patchProtocolBox}>
+                      <Text style={styles.patchProtocolTitle}>PATCH TESTING PROTOCOL</Text>
+                      <Text style={styles.patchProtocolText}>
+                        {formulatedRemedy.patchTestingGuidance}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -1958,5 +2209,242 @@ const styles = StyleSheet.create({
   compatActiveChipTextActive: {
     color: COLORS.cream,
     fontWeight: '600',
+  },
+  aiRemedyPromoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(230, 126, 34, 0.2)',
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
+  },
+  aiRemedyIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.burgundy,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiRemedyPromoTitle: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontSize: 14,
+  },
+  aiRemedyPromoDesc: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  remedyInputBox: {
+    backgroundColor: COLORS.cream,
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  remedyTextInput: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textPrimary,
+    minHeight: 50,
+    textAlignVertical: 'top',
+  },
+  quickTagsScroll: {
+    marginTop: SPACING.xs,
+  },
+  quickTagPill: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(92, 26, 46, 0.1)',
+  },
+  quickTagText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  skinTypeRow: {
+    marginBottom: SPACING.md,
+  },
+  selectorLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  typePill: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 5,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.cream,
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(92, 26, 46, 0.1)',
+  },
+  typePillActive: {
+    backgroundColor: COLORS.burgundy,
+    borderColor: COLORS.burgundy,
+  },
+  typePillText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    fontSize: 11,
+  },
+  typePillTextActive: {
+    color: COLORS.cream,
+    fontWeight: '700',
+  },
+  formulateBtn: {
+    backgroundColor: COLORS.burgundy,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
+  formulateBtnText: {
+    ...TYPOGRAPHY.button,
+    color: COLORS.cream,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  remedyResultScroll: {
+    maxHeight: 380,
+  },
+  formulatedCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(92, 26, 46, 0.1)',
+  },
+  formulatedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  formulatedName: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '700',
+    color: COLORS.burgundy,
+    fontSize: 15,
+    flex: 1,
+  },
+  formulatedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(92, 26, 46, 0.08)',
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 2,
+    borderRadius: RADIUS.xs,
+  },
+  formulatedBadgeText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  formulatedCategory: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  formulatedDesc: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textPrimary,
+    lineHeight: 18,
+    marginBottom: SPACING.md,
+  },
+  formulatedSectionTitle: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    fontSize: 11,
+    marginTop: SPACING.sm,
+    marginBottom: 4,
+  },
+  formulatedIngRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 2,
+  },
+  formulatedBullet: {
+    color: COLORS.burgundy,
+    fontSize: 12,
+  },
+  formulatedIngText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textPrimary,
+    lineHeight: 18,
+    fontSize: 12,
+  },
+  formulatedStepText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textPrimary,
+    lineHeight: 19,
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  formulatedFreqRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: SPACING.sm,
+  },
+  formulatedFreqText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontWeight: '600',
+  },
+  scienceRationaleBox: {
+    marginTop: SPACING.sm,
+    backgroundColor: 'rgba(92, 26, 46, 0.04)',
+    borderRadius: RADIUS.xs,
+    padding: SPACING.sm,
+  },
+  scienceRationaleTitle: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.burgundy,
+    fontWeight: '700',
+    fontSize: 10,
+  },
+  scienceRationaleText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textPrimary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  patchProtocolBox: {
+    marginTop: SPACING.sm,
+    backgroundColor: '#FFF8E1',
+    borderRadius: RADIUS.xs,
+    padding: SPACING.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFA000',
+  },
+  patchProtocolTitle: {
+    ...TYPOGRAPHY.caption,
+    color: '#8D6E63',
+    fontWeight: '700',
+    fontSize: 10,
+  },
+  patchProtocolText: {
+    ...TYPOGRAPHY.caption,
+    color: '#5D4037',
+    marginTop: 2,
+    lineHeight: 16,
   },
 });
