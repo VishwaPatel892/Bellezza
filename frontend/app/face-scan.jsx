@@ -75,7 +75,7 @@ export default function FaceScanScreen() {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.4,
         base64: true,
       });
 
@@ -95,10 +95,10 @@ export default function FaceScanScreen() {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.4,
         base64: true,
       });
 
@@ -115,14 +115,19 @@ export default function FaceScanScreen() {
   const handleStartAnalysis = async () => {
     if (!selectedImage) return;
 
+    if (!selectedImage.base64) {
+      Alert.alert(
+        'Image Data Missing',
+        'Could not encode the selected image. Please try taking a new photo or choosing another image.'
+      );
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
-      const b64Data = selectedImage.base64
-        ? `data:image/jpeg;base64,${selectedImage.base64}`
-        : selectedImage.uri;
-
+      const b64Data = `data:image/jpeg;base64,${selectedImage.base64}`;
       const data = await aiService.analyzeFace(b64Data);
       setAnalysisResult(data);
 
@@ -131,10 +136,8 @@ export default function FaceScanScreen() {
       }
     } catch (err) {
       console.error('Face analysis failed:', err);
-      Alert.alert(
-        'Analysis Failed',
-        err.message || 'Could not complete facial skin analysis. Please ensure you are connected to the network.'
-      );
+      const detail = err?.data?.message || err?.message || 'Could not complete facial skin analysis. Please ensure you are connected to the network.';
+      Alert.alert('Analysis Failed', detail);
     } finally {
       setIsAnalyzing(false);
     }

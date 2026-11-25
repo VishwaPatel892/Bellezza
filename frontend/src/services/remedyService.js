@@ -45,12 +45,16 @@ export const remedyService = {
    * AI Remedy Formulation powered by Groq 120B
    */
   aiFormulate: async ({ concern, skinType, allergies, availableIngredients }) => {
-    const res = await api.post('/remedies/ai-formulate', {
-      concern,
-      skinType,
-      allergies,
-      availableIngredients,
-    });
+    const res = await api.post(
+      '/remedies/ai-formulate',
+      {
+        concern,
+        skinType,
+        allergies,
+        availableIngredients,
+      },
+      { timeout: 30000 }
+    );
     return res.data;
   },
 
@@ -58,11 +62,15 @@ export const remedyService = {
    * AI DIY Remedy Safety and Irritation Evaluation powered by Groq
    */
   aiSafetyCheck: async ({ remedyName, ingredients, allergies }) => {
-    const res = await api.post('/remedies/ai-safety-check', {
-      remedyName,
-      ingredients,
-      allergies,
-    });
+    const res = await api.post(
+      '/remedies/ai-safety-check',
+      {
+        remedyName,
+        ingredients,
+        allergies,
+      },
+      { timeout: 30000 }
+    );
     return res.data;
   },
 };

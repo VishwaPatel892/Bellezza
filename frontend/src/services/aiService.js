@@ -5,7 +5,7 @@ export const aiService = {
    * Send message to Bellezza AI Assistant
    */
   chat: async (message, conversationId = null, category = 'general') => {
-    const res = await api.post('/ai/chat', { message, conversationId, category });
+    const res = await api.post('/ai/chat', { message, conversationId, category }, { timeout: 30000 });
     return res.data;
   },
 
@@ -41,7 +41,7 @@ export const aiService = {
    * AI Face Recognition & Skin Analysis via Groq Vision
    */
   analyzeFace: async (imageBase64) => {
-    const res = await api.post('/ai/face-analysis', { image: imageBase64 });
+    const res = await api.post('/ai/face-analysis', { image: imageBase64 }, { timeout: 60000 });
     return res.data;
   },
 

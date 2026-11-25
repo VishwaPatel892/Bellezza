@@ -62,7 +62,7 @@ export const request = async (endpoint, options = {}) => {
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 6000);
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 20000);
 
   try {
     const response = await fetch(url, {
@@ -103,33 +103,37 @@ export const request = async (endpoint, options = {}) => {
 };
 
 export const api = {
-  get: (endpoint, params = {}) => {
+  get: (endpoint, params = {}, customOptions = {}) => {
     const query = new URLSearchParams(params).toString();
     const path = query ? `${endpoint}?${query}` : endpoint;
-    return request(path, { method: 'GET' });
+    return request(path, { method: 'GET', ...customOptions });
   },
-  post: (endpoint, body = {}) => {
+  post: (endpoint, body = {}, customOptions = {}) => {
     return request(endpoint, {
       method: 'POST',
       body: JSON.stringify(body),
+      ...customOptions,
     });
   },
-  put: (endpoint, body = {}) => {
+  put: (endpoint, body = {}, customOptions = {}) => {
     return request(endpoint, {
       method: 'PUT',
       body: JSON.stringify(body),
+      ...customOptions,
     });
   },
-  patch: (endpoint, body = {}) => {
+  patch: (endpoint, body = {}, customOptions = {}) => {
     return request(endpoint, {
       method: 'PATCH',
       body: JSON.stringify(body),
+      ...customOptions,
     });
   },
-  delete: (endpoint, body = null) => {
+  delete: (endpoint, body = null, customOptions = {}) => {
     return request(endpoint, {
       method: 'DELETE',
       ...(body ? { body: JSON.stringify(body) } : {}),
+      ...customOptions,
     });
   },
 };
